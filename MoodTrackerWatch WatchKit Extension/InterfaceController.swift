@@ -11,11 +11,29 @@ import Foundation
 
 
 class InterfaceController: WKInterfaceController {
+    
+    @IBOutlet weak var table: WKInterfaceTable!
+    var moods = [String]()
 
+    func refreshTable() {
+        var reversedMoods = moods.reverse()
+        table.setNumberOfRows(reversedMoods.count, withRowType: "tableRowController")
+        for (index, mood) in enumerate(reversedMoods) {
+            let row = table.rowControllerAtIndex(index) as! tableRowController
+            row.tableRowLabel.setText(mood)
+        }
+    }
+    
     override func awakeWithContext(context: AnyObject?) {
         super.awakeWithContext(context)
         
-        // Configure interface objects here.
+        if NSUserDefaults.standardUserDefaults().objectForKey("moods") != nil {
+            moods = NSUserDefaults.standardUserDefaults().objectForKey("moods") as! [String]
+        } else {
+            moods.append("No moods saved")
+        }
+        refreshTable()
+        
     }
 
     override func willActivate() {
@@ -28,4 +46,18 @@ class InterfaceController: WKInterfaceController {
         super.didDeactivate()
     }
 
+    override func handleActionWithIdentifier(identifier: String?, forRemoteNotification remoteNotification: [NSObject : AnyObject]) {
+        if let notificationIndentifier = identifier {
+            let dateFormatter = NSDateFormatter()
+            dateFormatter.dateFormat = "hh:mm a"
+            let stringDate = dateFormatter.stringFromDate(NSDate())
+            var mood = "\(stringDate) - \(notificationIndentifier)"
+            if NSUserDefaults.standardUserDefaults().objectForKey("moods") != nil {
+                moods = NSUserDefaults.standardUserDefaults().objectForKey("moods") as! [String]
+            }
+            moods.append(mood)
+            NSUserDefaults.standardUserDefaults().setObject(moods, forKey: "moods")
+            refreshTable()
+        }
+    }
 }
